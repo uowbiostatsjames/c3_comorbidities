@@ -23,6 +23,7 @@
 			where e.g. F32.10 was selected, but F32.1 was not selected
 
 *-- v1.0: 17/01/2023. Set to v. 1.0 now that methods adjusted/set alongside 
+*-- v1.01: 18/01/2023 Added option OPTIONS VALIDVARNAME="V7" near start to work around Enterprise Guide naming conventions
 
 --*;
 
@@ -1056,6 +1057,10 @@ ICDcolname is the name of the single column containing all ICD codes.
 		BY &IDvars C3_Cat;
 	RUN;
 
+	/* UPDATE v1.01: Don't allow spaces in variable names! Default in Enterprise Guide 
+	is for more flexible name allowances, which breaks the code */
+	%LET VALVARSET = %sysfunc(getoption(VALIDVARNAME)); 
+	OPTIONS VALIDVARNAME=V7;
 	/* Transpose the resulting table: this takes it from a long table
 	with one row per person per condition...
 	to a wide table, with one row per person, and one column per condition. */
@@ -1065,6 +1070,8 @@ ICDcolname is the name of the single column containing all ICD codes.
 		VAR ICD_status;
 		BY  &IDvars;
 	RUN;
+	* Reset the naming option again here;
+	OPTIONS VALIDVARNAME=&VALVARSET;
 	
 	/*Preceding steps may already have handled sorting... just in case...*/
 	PROC SORT DATA = &outputdata; BY &IDVars; RUN;
@@ -1591,11 +1598,18 @@ Merge_M3_finalset
 	/*Drop prefix option from proc transpose statement
 	and add in id variable to give verbose names to columns.*/
 	/*For some reason this is REALLY SLOW (takes 13 seconds, rather than 0.5 s)*/
+
+	/* UPDATE v1.01: Don't allow spaces in variable names! Default in Enterprise Guide 
+	is for more flexible name allowances, which breaks the code */
+	%LET VALVARSET = %sysfunc(getoption(VALIDVARNAME)); 
+	OPTIONS VALIDVARNAME=V7;
 	PROC TRANSPOSE DATA=_Cond_file OUT=WORK.&outname(DROP=_name_ COMPRESS=binary) PREFIX=&var_prefix;
 		ID  &lookup_variable; /*names is too long, not good for following processing?*/
 		VAR Cond_status;
 		BY  &patient_id;
 	RUN;
+	* Reset the naming option again here;
+	OPTIONS VALIDVARNAME=&VALVARSET;
 	
 /*Ideas here -- tidy up some intermediary datasets?*/
 
